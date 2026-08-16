@@ -2,14 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { username, email, password } = await req.json();
+    const { username, email, password, verificationToken } = await req.json();
 
     const res = await fetch(
-      "http://localhost:1337/api/auth/local/register",
+      `${process.env.STRAPI_URL ?? "http://localhost:1337"}/api/auth/local/register`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(typeof verificationToken === "string"
+            ? { "x-email-verification-token": verificationToken }
+            : {}),
         },
         body: JSON.stringify({
           username,
@@ -36,7 +39,7 @@ export async function POST(req: NextRequest) {
     });
 
     return response;
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Something went wrong" },
       { status: 500 }
