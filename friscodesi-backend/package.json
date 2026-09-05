@@ -24,6 +24,7 @@
     "@strapi/strapi": "5.36.1",
     "@strapi/upload": "^5.36.1",
     "better-sqlite3": "12.4.1",
+    "pg": "^8.23.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-router-dom": "^6.0.0",
