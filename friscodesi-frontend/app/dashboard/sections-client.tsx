@@ -99,7 +99,7 @@ export default function AnimatedSections({
           repeat: Infinity,
           ease: "easeInOut",
         }}
-        className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-amber-100 rounded-full blur-3xl opacity-30"
+        className="absolute -top-40 -left-40 w-125 h-125 bg-amber-100 rounded-full blur-3xl opacity-30"
       />
 
       <motion.div
@@ -109,7 +109,7 @@ export default function AnimatedSections({
           repeat: Infinity,
           ease: "easeInOut",
         }}
-        className="absolute -bottom-40 -right-40 w-[500px] h-[500px] bg-amber-100 rounded-full blur-3xl opacity-30"
+        className="absolute -bottom-40 -right-40 w-125 h-125 bg-amber-100 rounded-full blur-3xl opacity-30"
       />
 
       <motion.div
@@ -160,13 +160,13 @@ export default function AnimatedSections({
             >
               <Link
                 href={`/section/${section.slug}`}
-                className="group relative block bg-gradient-to-b from-white to-amber-50 rounded-3xl p-10 text-center border border-amber-100 shadow-md hover:shadow-2xl transition duration-300 overflow-hidden"
+                className="group relative block bg-linear-to-b from-white to-amber-50 rounded-3xl p-10 text-center border border-amber-100 shadow-md hover:shadow-2xl transition duration-300 overflow-hidden"
               >
                 {/* Sweep Light */}
                 <span
                   className="
                     absolute inset-0
-                    bg-gradient-to-r
+                    bg-linear-to-r
                     from-transparent
                     via-white/40
                     to-transparent

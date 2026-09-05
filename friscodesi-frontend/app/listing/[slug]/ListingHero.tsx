@@ -1,11 +1,16 @@
+"use client";
+
 import Link from "next/link";
 import type { Listing } from "./page";
+import FavoriteButton from "./FavoriteButton";
 
 interface Props {
   listing: Listing;
 }
 
-export default function ListingHero({ listing }: Props) {
+export default function ListingHero({
+  listing,
+}: Props) {
   const section = listing.category?.section;
 
   return (
@@ -59,11 +64,13 @@ export default function ListingHero({ listing }: Props) {
           <img
             src={listing.image}
             alt={listing.name}
-            className="w-full h-[420px] rounded-3xl object-cover shadow-xl mb-10"
+            className="w-full h-105 rounded-3xl object-cover shadow-xl mb-10"
           />
         ) : (
-          <div className="w-full h-[420px] rounded-3xl bg-gradient-to-r from-yellow-200 to-amber-100 flex items-center justify-center shadow-xl mb-10">
-            <span className="text-7xl">🏢</span>
+          <div className="w-full h-105 rounded-3xl bg-linear-to-r from-yellow-200 to-amber-100 flex items-center justify-center shadow-xl mb-10">
+            <span className="text-7xl">
+              🏢
+            </span>
           </div>
         )}
 
@@ -88,9 +95,12 @@ export default function ListingHero({ listing }: Props) {
               ⭐ {listing.rating} / 5
             </span>
           </div>
+
           {/* ================= Action Buttons ================= */}
 
           <div className="flex flex-wrap gap-4 mt-10">
+
+            {/* Call */}
 
             {listing.phone && (
               <a
@@ -100,6 +110,8 @@ export default function ListingHero({ listing }: Props) {
                 📞 Call
               </a>
             )}
+
+            {/* Website */}
 
             {listing.website && (
               <a
@@ -112,6 +124,8 @@ export default function ListingHero({ listing }: Props) {
               </a>
             )}
 
+            {/* Directions */}
+
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                 listing.address
@@ -123,12 +137,11 @@ export default function ListingHero({ listing }: Props) {
               📍 Directions
             </a>
 
-            <button
-              type="button"
-              className="bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-xl font-semibold transition"
-            >
-              ❤️ Save
-            </button>
+            {/* ================= Favorite ================= */}
+
+            <FavoriteButton
+              listingId={listing.id}
+            />
 
           </div>
 

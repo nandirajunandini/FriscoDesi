@@ -20,6 +20,7 @@
     "@strapi/content-type-builder": "^5.36.1",
     "@strapi/plugin-cloud": "^5.36.1",
     "@strapi/plugin-users-permissions": "5.36.1",
+    "@strapi/provider-email-nodemailer": "^5.52.2",
     "@strapi/strapi": "5.36.1",
     "@strapi/upload": "^5.36.1",
     "better-sqlite3": "12.4.1",
@@ -32,7 +33,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=20.0.0 <=24.x.x",

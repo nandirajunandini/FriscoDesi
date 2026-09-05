@@ -12,6 +12,7 @@ interface Listing {
   slug: string;
   address: string;
   rating: number;
+  foodType?: string | null;
 }
 
 interface Section {
@@ -32,27 +33,54 @@ interface Category {
 /* Fetch Category From Strapi    */
 /* ============================= */
 
-async function getCategory(slug: string): Promise<Category | null> {
-  const res = await fetch(
-    `http://localhost:1337/api/categories?filters[slug][$eq]=${slug}&populate=section&populate=listings`,
-    { cache: "no-store" }
-  );
+async function getCategory(
+  slug: string
+): Promise<Category | null> {
+  try {
+    const res = await fetch(
+      `http://localhost:1337/api/categories?filters[slug][$eq]=${encodeURIComponent(
+        slug
+      )}&populate=section&populate=listings`,
+      {
+        cache: "no-store",
+      }
+    );
 
-  if (!res.ok) return null;
+    if (!res.ok) {
+      console.error(
+        "Failed to fetch category:",
+        res.status
+      );
 
-  const data = await res.json();
+      return null;
+    }
 
-  if (!data.data || data.data.length === 0) return null;
+    const data = await res.json();
 
-  const category = data.data[0];
+    if (
+      !data.data ||
+      data.data.length === 0
+    ) {
+      return null;
+    }
 
-  return {
-    id: category.id,
-    name: category.name,
-    slug: category.slug,
-    section: category.section,
-    listings: category.listings || [],
-  };
+    const category = data.data[0];
+
+    return {
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      section: category.section,
+      listings: category.listings || [],
+    };
+  } catch (error) {
+    console.error(
+      "Category fetch error:",
+      error
+    );
+
+    return null;
+  }
 }
 
 /* ============================= */
@@ -62,22 +90,52 @@ async function getCategory(slug: string): Promise<Category | null> {
 export default async function CategoryPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{
+    slug: string;
+  }>;
 }) {
   const { slug } = await params;
 
-  const category = await getCategory(slug);
+  /* =============================
+     Get Category
+     
+     Category pages are PUBLIC.
+     
+     Users do not need to register
+     or login to browse listings.
+  ============================= */
 
-  if (!category) return notFound();
+  const category =
+    await getCategory(slug);
 
-  const listingCount = category.listings.length;
+  /* =============================
+     Category Not Found
+  ============================= */
+
+  if (!category) {
+    return notFound();
+  }
+
+  /* =============================
+     Listing Count
+  ============================= */
+
+  const listingCount =
+    category.listings.length;
+
+  /* =============================
+     Page
+  ============================= */
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white px-6 py-14">
+    <main className="min-h-screen bg-linear-to-b from-gray-50 to-white px-6 py-14">
 
       <div className="max-w-6xl mx-auto">
 
-        {/* Breadcrumb */}
+        {/* =========================
+            Breadcrumb
+        ========================= */}
+
         <div className="flex flex-wrap items-center text-sm text-gray-500 mb-8">
 
           <Link
@@ -87,7 +145,9 @@ export default async function CategoryPage({
             Home
           </Link>
 
-          <span className="mx-2">/</span>
+          <span className="mx-2">
+            /
+          </span>
 
           <Link
             href={`/section/${category.section.slug}`}
@@ -96,7 +156,9 @@ export default async function CategoryPage({
             {category.section.name}
           </Link>
 
-          <span className="mx-2">/</span>
+          <span className="mx-2">
+            /
+          </span>
 
           <span className="text-gray-800 font-medium">
             {category.name}
@@ -104,48 +166,66 @@ export default async function CategoryPage({
 
         </div>
 
+        {/* =========================
+            Header
+        ========================= */}
 
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12">
 
           <div>
+
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900">
               {category.name}
             </h1>
 
             <p className="text-gray-500 mt-3 text-lg">
-              Discover trusted listings in {category.name}
+              Discover trusted listings in{" "}
+              {category.name}
             </p>
+
           </div>
 
+          {/* =========================
+              Listing Count
+          ========================= */}
 
           <div className="mt-6 md:mt-0">
 
             <div className="bg-indigo-100 text-indigo-700 px-5 py-2 rounded-full font-medium text-sm shadow-sm">
+
               {listingCount}{" "}
-              {listingCount === 1 ? "Listing" : "Listings"}
+
+              {listingCount === 1
+                ? "Listing"
+                : "Listings"}
+
             </div>
 
           </div>
 
         </div>
 
+        {/* =========================
+            Listings
+        ========================= */}
 
-        {/* Listings */}
         <AnimatedListingGrid
           listings={category.listings}
           categorySlug={category.slug}
         />
 
+        {/* =========================
+            Back
+        ========================= */}
 
-        {/* Back */}
         <div className="mt-16">
 
           <Link
             href={`/section/${category.section.slug}`}
             className="inline-flex items-center text-indigo-600 font-medium hover:underline"
           >
-            ← Back to {category.section.name}
+            ← Back to{" "}
+            {category.section.name}
           </Link>
 
         </div>

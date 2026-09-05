@@ -41,27 +41,24 @@ export default function AdminImportPage() {
   const [message, setMessage] =
     useState("");
 
-  const [foodType, setFoodType] =
-    useState("");
-
   /*
     Google Place ID -> Strapi documentId
 
     Example:
 
     {
-      "ChIJ123": "abc123"
+      "ChIJ123": "abc123",
+      "ChIJ456": "xyz456"
     }
   */
+
   const [importedListings, setImportedListings] =
     useState<Record<string, string>>({});
 
 
-  /*
-    ==========================
-    Load Categories
-    ==========================
-  */
+  /* =========================================
+     Load Categories
+  ========================================= */
 
   useEffect(() => {
     async function loadCategories() {
@@ -71,6 +68,15 @@ export default function AdminImportPage() {
         );
 
         const data = await res.json();
+
+        if (!res.ok) {
+          console.error(
+            "Failed to load categories:",
+            data
+          );
+
+          return;
+        }
 
         setCategories(
           data.categories ||
@@ -89,11 +95,9 @@ export default function AdminImportPage() {
   }, []);
 
 
-  /*
-    ==========================
-    Search Google Places
-    ==========================
-  */
+  /* =========================================
+     Search Google Places
+  ========================================= */
 
   const searchPlaces = async () => {
     if (!query.trim()) {
@@ -107,20 +111,20 @@ export default function AdminImportPage() {
     }
 
     setLoading(true);
+
     setMessage("");
 
     /*
-      Clear previous import status
-      while searching
+      Clear old import status while
+      performing a new search.
     */
 
     setImportedListings({});
 
     try {
-      /*
-        Step 1:
-        Search Google Places
-      */
+      /* ---------------------------------------
+         Search Google Places
+      --------------------------------------- */
 
       const res = await fetch(
         "/api/admin/import/search",
@@ -151,24 +155,18 @@ export default function AdminImportPage() {
         return;
       }
 
-
       const searchResults: Place[] =
         data.places || [];
-
 
       setPlaces(searchResults);
 
 
-      /*
-        ==================================
-        Step 2:
-        Check which businesses are already
-        imported in Strapi
-        ==================================
-      */
+      /* ---------------------------------------
+         Check which businesses are already
+         imported in Strapi
+      --------------------------------------- */
 
       if (searchResults.length > 0) {
-
         const placeIds =
           searchResults
             .map(
@@ -177,11 +175,8 @@ export default function AdminImportPage() {
             )
             .filter(Boolean);
 
-
         if (placeIds.length > 0) {
-
           try {
-
             const statusRes =
               await fetch(
                 "/api/admin/import/status",
@@ -199,35 +194,28 @@ export default function AdminImportPage() {
                 }
               );
 
-
             const statusData =
               await statusRes.json();
 
-
             if (!statusRes.ok) {
-
               console.error(
                 "Import status check failed:",
                 statusData
               );
-
             } else {
-
               console.log(
                 "Imported listings:",
                 statusData.imported
               );
 
-
               /*
-                Example result:
+                Expected response:
 
                 {
-                  "ChIJ123":
-                    "documentId123",
-
-                  "ChIJ456":
-                    "documentId456"
+                  "imported": {
+                    "ChIJ123": "documentId123",
+                    "ChIJ456": "documentId456"
+                  }
                 }
               */
 
@@ -236,20 +224,15 @@ export default function AdminImportPage() {
                 {}
               );
             }
-
           } catch (error) {
-
             console.error(
               "Status API error:",
               error
             );
-
           }
         }
       }
-
     } catch (error) {
-
       console.error(
         "Search error:",
         error
@@ -260,31 +243,24 @@ export default function AdminImportPage() {
       );
 
       setPlaces([]);
-
     } finally {
-
       setLoading(false);
-
     }
   };
 
 
-  /*
-    ==========================
-    Import Business
-    ==========================
-  */
+  /* =========================================
+     Import Business
+  ========================================= */
 
   const importBusiness = async (
     place: Place
   ) => {
-
     setImporting(place.id);
 
     setMessage("");
 
     try {
-
       const res = await fetch(
         "/api/admin/import/save",
         {
@@ -296,29 +272,18 @@ export default function AdminImportPage() {
           },
 
           body: JSON.stringify({
-
             ...place,
 
             category:
               Number(selectedCategory),
-
-            attributes: {
-              foodType:
-                foodType ||
-                "Not Applicable",
-            },
-
           }),
         }
       );
 
-
       const data =
         await res.json();
 
-
       if (!res.ok) {
-
         alert(
           data.error ||
           "Import failed"
@@ -327,10 +292,15 @@ export default function AdminImportPage() {
         return;
       }
 
+      console.log(
+        "Import response:",
+        data
+      );
 
-      /*
-        Get Strapi documentId
-      */
+
+      /* ---------------------------------------
+         Get Strapi documentId
+      --------------------------------------- */
 
       const documentId =
         data?.documentId ||
@@ -339,18 +309,11 @@ export default function AdminImportPage() {
         data?.listing?.data?.documentId;
 
 
-      console.log(
-        "Import response:",
-        data
-      );
-
-      console.log(
-        "Document ID:",
-        documentId
-      );
-
-
       if (!documentId) {
+        console.error(
+          "Document ID missing:",
+          data
+        );
 
         alert(
           "Business imported, but documentId was not returned."
@@ -360,9 +323,15 @@ export default function AdminImportPage() {
       }
 
 
-      /*
-        Store imported status
-      */
+      console.log(
+        "Imported Document ID:",
+        documentId
+      );
+
+
+      /* ---------------------------------------
+         Mark business as imported
+      --------------------------------------- */
 
       setImportedListings(
         (previous) => ({
@@ -377,10 +346,7 @@ export default function AdminImportPage() {
       setMessage(
         `${place.name} imported successfully`
       );
-
-
     } catch (error) {
-
       console.error(
         "Import error:",
         error
@@ -389,31 +355,24 @@ export default function AdminImportPage() {
       alert(
         "Import failed"
       );
-
     } finally {
-
       setImporting("");
-
     }
   };
 
 
-  /*
-    ==========================
-    Un-import Business
-    ==========================
-  */
+  /* =========================================
+     Un-import Business
+  ========================================= */
 
   const unimportBusiness = async (
     place: Place
   ) => {
-
     const documentId =
       importedListings[place.id];
 
 
     if (!documentId) {
-
       alert(
         "Document ID not found for this listing."
       );
@@ -439,7 +398,6 @@ export default function AdminImportPage() {
 
 
     try {
-
       const res = await fetch(
         `/api/admin/import/delete/${documentId}`,
         {
@@ -453,7 +411,6 @@ export default function AdminImportPage() {
 
 
       if (!res.ok) {
-
         alert(
           data.error ||
           "Failed to un-import listing"
@@ -463,13 +420,12 @@ export default function AdminImportPage() {
       }
 
 
-      /*
-        Remove from imported map
-      */
+      /* ---------------------------------------
+         Remove business from imported map
+      --------------------------------------- */
 
       setImportedListings(
         (previous) => {
-
           const updated = {
             ...previous,
           };
@@ -484,10 +440,7 @@ export default function AdminImportPage() {
       setMessage(
         `${place.name} was un-imported successfully`
       );
-
-
     } catch (error) {
-
       console.error(
         "Un-import error:",
         error
@@ -496,49 +449,30 @@ export default function AdminImportPage() {
       alert(
         "Failed to un-import listing"
       );
-
     } finally {
-
       setUnimporting("");
-
     }
   };
 
 
-  /*
-    ==========================
-    Selected Category
-    ==========================
-  */
-
-  const selectedCategoryName =
-    categories.find(
-      (cat) =>
-        String(cat.id) ===
-        selectedCategory
-    )?.name;
-
-
-  const isFoodCategory =
-    selectedCategoryName
-      ?.toLowerCase()
-      .includes("food");
-
-
-  /*
-    ==========================
-    UI
-    ==========================
-  */
+  /* =========================================
+     UI
+  ========================================= */
 
   return (
     <div className="flex bg-gradient-to-br from-blue-50 to-purple-100 min-h-screen">
 
+      {/* Sidebar */}
+
       <AdminSidebar />
+
+
+      {/* Main */}
 
       <div className="flex-1 p-10">
 
         <AdminHeader />
+
 
         <div className="bg-white rounded-2xl shadow-lg p-8">
 
@@ -547,6 +481,10 @@ export default function AdminImportPage() {
           </h1>
 
 
+          {/* =================================
+              Success Message
+          ================================= */}
+
           {message && (
             <div className="mb-6 bg-green-100 text-green-700 p-4 rounded-xl">
               {message}
@@ -554,9 +492,9 @@ export default function AdminImportPage() {
           )}
 
 
-          {/* ==========================
-              Filters
-          ========================== */}
+          {/* =================================
+              Search Filters
+          ================================= */}
 
           <div className="grid md:grid-cols-3 gap-4 mb-8">
 
@@ -565,11 +503,22 @@ export default function AdminImportPage() {
 
             <select
               value={selectedCategory}
-              onChange={(e) =>
+              onChange={(e) => {
                 setSelectedCategory(
                   e.target.value
-                )
-              }
+                );
+
+                /*
+                  Clear previous results when
+                  category changes.
+                */
+
+                setPlaces([]);
+
+                setImportedListings({});
+
+                setMessage("");
+              }}
               className="border rounded-xl px-4 py-3"
             >
 
@@ -580,16 +529,12 @@ export default function AdminImportPage() {
 
               {categories.map(
                 (category) => (
-
                   <option
                     key={category.id}
                     value={category.id}
                   >
-
                     {category.name}
-
                   </option>
-
                 )
               )}
 
@@ -603,47 +548,17 @@ export default function AdminImportPage() {
               onChange={(e) =>
                 setQuery(e.target.value)
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  searchPlaces();
+                }
+              }}
               placeholder="Search businesses"
               className="border rounded-xl px-4 py-3"
             />
 
 
-            {/* Food Type */}
-
-            {isFoodCategory && (
-
-              <select
-                value={foodType}
-                onChange={(e) =>
-                  setFoodType(
-                    e.target.value
-                  )
-                }
-                className="border rounded-xl px-4 py-3"
-              >
-
-                <option value="">
-                  Select Food Type
-                </option>
-
-                <option value="Pure Veg">
-                  Pure Veg
-                </option>
-
-                <option value="Non Veg">
-                  Non Veg
-                </option>
-
-                <option value="Veg & Non Veg">
-                  Veg & Non Veg
-                </option>
-
-              </select>
-
-            )}
-
-
-            {/* Search */}
+            {/* Search Button */}
 
             <button
               onClick={searchPlaces}
@@ -660,187 +575,196 @@ export default function AdminImportPage() {
           </div>
 
 
-          {/* ==========================
+          {/* =================================
               Results
-          ========================== */}
+          ================================= */}
 
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
 
 
+            {/* No Results */}
+
             {places.length === 0 &&
               !loading && (
-
                 <div className="col-span-full text-center text-gray-500 py-10">
 
                   Search businesses to import
 
                 </div>
-
               )}
 
 
-            {places.map(
-              (place) => {
+            {/* Loading */}
 
-                const documentId =
-                  importedListings[
-                    place.id
-                  ];
+            {loading && (
+              <div className="col-span-full text-center text-gray-500 py-10">
 
+                Searching Google Places...
 
-                const isImported =
-                  Boolean(documentId);
+              </div>
+            )}
 
 
-                const isImporting =
-                  importing ===
-                  place.id;
+            {/* Business Cards */}
+
+            {!loading &&
+              places.map(
+                (place) => {
+
+                  const documentId =
+                    importedListings[
+                      place.id
+                    ];
 
 
-                const isUnimporting =
-                  unimporting ===
-                  place.id;
+                  const isImported =
+                    Boolean(documentId);
 
 
-                return (
-
-                  <div
-                    key={place.id}
-                    className="bg-gray-50 border rounded-2xl p-6 shadow-sm hover:shadow-lg"
-                  >
-
-                    <h2 className="text-xl font-bold">
-                      {place.name}
-                    </h2>
+                  const isImporting =
+                    importing ===
+                    place.id;
 
 
-                    <p className="mt-3 text-gray-600">
-                      📍 {place.address}
-                    </p>
+                  const isUnimporting =
+                    unimporting ===
+                    place.id;
 
 
-                    {place.zipCode && (
+                  return (
+                    <div
+                      key={place.id}
+                      className="bg-gray-50 border rounded-2xl p-6 shadow-sm hover:shadow-lg transition"
+                    >
 
-                      <p className="mt-2 text-gray-600">
-                        📮 Zip Code:{" "}
-                        {place.zipCode}
+                      {/* Business Name */}
+
+                      <h2 className="text-xl font-bold">
+                        {place.name}
+                      </h2>
+
+
+                      {/* Address */}
+
+                      <p className="mt-3 text-gray-600">
+                        📍 {place.address}
                       </p>
 
-                    )}
+
+                      {/* ZIP */}
+
+                      {place.zipCode && (
+                        <p className="mt-2 text-gray-600">
+                          📮 Zip Code:{" "}
+                          {place.zipCode}
+                        </p>
+                      )}
 
 
-                    <p className="mt-3">
-                      ⭐ {place.rating}
-                    </p>
-
-
-                    {place.reviewCount && (
-
-                      <p className="text-gray-600">
-                        👥{" "}
-                        {place.reviewCount}{" "}
-                        reviews
-                      </p>
-
-                    )}
-
-
-                    {place.phone && (
+                      {/* Rating */}
 
                       <p className="mt-3">
-                        📞 {place.phone}
+                        ⭐ {place.rating}
                       </p>
 
-                    )}
+
+                      {/* Reviews */}
+
+                      {place.reviewCount !==
+                        undefined && (
+                        <p className="text-gray-600">
+                          👥{" "}
+                          {place.reviewCount}{" "}
+                          reviews
+                        </p>
+                      )}
 
 
-                    {place.website && (
+                      {/* Phone */}
 
-                      <a
-                        href={
-                          place.website
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block mt-3 text-blue-600 break-all"
-                      >
-
-                        🌐 Website
-
-                      </a>
-
-                    )}
+                      {place.phone && (
+                        <p className="mt-3">
+                          📞 {place.phone}
+                        </p>
+                      )}
 
 
-                    {/* ==========================
-                        Imported
-                    ========================== */}
+                      {/* Website */}
 
-                    {isImported && (
+                      {place.website && (
+                        <a
+                          href={
+                            place.website
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block mt-3 text-blue-600 break-all"
+                        >
+                          🌐 Website
+                        </a>
+                      )}
 
-                      <>
-                        <div className="mt-5 bg-green-100 text-green-700 px-4 py-2 rounded-lg text-center font-medium">
 
-                          ✓ Imported
+                      {/* =================================
+                          IMPORTED BUSINESS
+                      ================================= */}
 
-                        </div>
+                      {isImported && (
+                        <>
+                          <div className="mt-5 bg-green-100 text-green-700 px-4 py-2 rounded-lg text-center font-medium">
+                            ✓ Imported
+                          </div>
 
 
+                          <button
+                            onClick={() =>
+                              unimportBusiness(
+                                place
+                              )
+                            }
+                            disabled={
+                              isUnimporting
+                            }
+                            className="w-full mt-3 bg-red-600 text-white py-3 rounded-xl hover:bg-red-700 disabled:opacity-50"
+                          >
+
+                            {isUnimporting
+                              ? "Un-importing..."
+                              : "Un-import"}
+
+                          </button>
+                        </>
+                      )}
+
+
+                      {/* =================================
+                          NOT IMPORTED BUSINESS
+                      ================================= */}
+
+                      {!isImported && (
                         <button
                           onClick={() =>
-                            unimportBusiness(
+                            importBusiness(
                               place
                             )
                           }
                           disabled={
-                            isUnimporting
+                            isImporting
                           }
-                          className="w-full mt-3 bg-red-600 text-white py-3 rounded-xl hover:bg-red-700 disabled:opacity-50"
+                          className="w-full mt-6 bg-green-600 text-white py-3 rounded-xl hover:bg-green-700 disabled:opacity-50"
                         >
 
-                          {isUnimporting
-                            ? "Un-importing..."
-                            : "Un-import"}
+                          {isImporting
+                            ? "Importing..."
+                            : "Import Business"}
 
                         </button>
+                      )}
 
-                      </>
-
-                    )}
-
-
-                    {/* ==========================
-                        Not Imported
-                    ========================== */}
-
-                    {!isImported && (
-
-                      <button
-                        onClick={() =>
-                          importBusiness(
-                            place
-                          )
-                        }
-                        disabled={
-                          isImporting
-                        }
-                        className="w-full mt-6 bg-green-600 text-white py-3 rounded-xl hover:bg-green-700 disabled:opacity-50"
-                      >
-
-                        {isImporting
-                          ? "Importing..."
-                          : "Import Business"}
-
-                      </button>
-
-                    )}
-
-                  </div>
-
-                );
-
-              }
-            )}
+                    </div>
+                  );
+                }
+              )}
 
           </div>
 

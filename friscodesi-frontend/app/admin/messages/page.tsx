@@ -1,136 +1,219 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import AdminSidebar from "@/components/AdminSidebar";
+import AdminHeader from "@/components/AdminHeader";
+import MessageCard from "@/components/MessageCard";
 
-interface Message {
+type Message = {
   id: number;
   documentId: string;
   name: string;
   email: string;
   message: string;
-  messageStatus: string;
-}
+  messageStatus: "new" | "replied" | string;
+  adminReply?: string | null;
+  createdAt?: string;
+};
 
-export default function AdminMessagesPage() {
+export default function AdminMessages() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    async function fetchMessages() {
-      try {
-        const res = await fetch(
-          "http://localhost:1337/api/contact-messages",
-          {
-            credentials: "include",
-          }
-        );
+    fetchMessages();
+  }, []);
 
-        if (res.status === 401) {
-          router.push("/admin/login");
-          return;
+  async function fetchMessages() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const res = await fetch(
+        "http://localhost:1337/api/contact-messages?sort=createdAt:desc",
+        {
+          method: "GET",
+          cache: "no-store",
         }
+      );
 
-        const data = await res.json();
+      if (!res.ok) {
+        throw new Error("Failed to fetch messages");
+      }
 
-        const formatted = data.data.map((item: any) => ({
+      const data = await res.json();
+
+      console.log("Messages from Strapi:", data.data);
+
+      const formattedMessages: Message[] = (data.data || []).map(
+        (item: any) => ({
           id: item.id,
           documentId: item.documentId,
-          name: item.name,
-          email: item.email,
-          message: item.message,
-          messageStatus: item.messageStatus,
-        }));
+          name: item.name || "",
+          email: item.email || "",
+          message: item.message || "",
+          messageStatus: item.messageStatus || "new",
+          adminReply: item.adminReply || null,
+          createdAt: item.createdAt || "",
+        })
+      );
 
-        setMessages(formatted);
-      } catch (error) {
-        console.error("Error fetching messages:", error);
-      } finally {
-        setLoading(false);
-      }
+      setMessages(formattedMessages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+
+      setError(
+        "Unable to load messages. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
-
-    fetchMessages();
-  }, [router]);
-
-  async function handleLogout() {
-    await fetch("/api/admin/logout", {
-      method: "POST",
-    });
-
-    router.push("/admin/login");
-  }
-
-  if (loading) {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-pulse text-lg font-medium text-gray-600">
-          Loading messages...
-        </div>
-      </main>
-    );
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 p-10">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-10">
-        <h1 className="text-3xl font-bold">Admin Messages 👑</h1>
+    <div className="flex min-h-screen bg-linear-to-br from-blue-50 to-purple-100">
+      
+      {/* =========================
+          SIDEBAR
+      ========================= */}
 
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg transition shadow"
-        >
-          Logout
-        </button>
-      </div>
+      <AdminSidebar />
 
-      {/* Empty State */}
-      {messages.length === 0 && (
-        <div className="bg-white p-10 rounded-2xl shadow text-center">
-          <p className="text-gray-600">No messages found.</p>
-        </div>
-      )}
+      {/* =========================
+          MAIN CONTENT
+      ========================= */}
 
-      {/* Messages Grid */}
-      <div className="grid gap-6">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className="bg-white p-6 rounded-2xl shadow-md border hover:shadow-xl transition"
-          >
-            <div className="flex justify-between items-start">
-              <div>
-                <h2 className="font-semibold text-lg">{msg.name}</h2>
-                <p className="text-gray-500 text-sm">{msg.email}</p>
-              </div>
+      <main className="flex-1 p-6 sm:p-8 lg:p-10">
 
-              <span
-                className={`px-3 py-1 text-xs rounded-full font-medium ${
-                  msg.messageStatus === "replied"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-yellow-100 text-yellow-700"
-                }`}
-              >
-                {msg.messageStatus}
-              </span>
-            </div>
+        {/* 
+          AdminHeader already contains
+          "Admin Messages 👑"
+          
+          Therefore we DO NOT add another h1 here.
+        */}
 
-            <p className="mt-4 text-gray-700 leading-relaxed">
-              {msg.message?.slice(0, 140)}...
+        <AdminHeader />
+
+        {/* =========================
+            PAGE DESCRIPTION
+        ========================= */}
+
+        <div className="mx-auto mt-6 max-w-7xl">
+
+          <div className="mb-6">
+            <p className="text-sm text-gray-600">
+              Manage messages received from the
+              FriscoDesi community.
             </p>
-
-            <Link
-              href={`/admin/messages/${msg.documentId}`}
-              className="mt-4 inline-block text-indigo-600 font-medium hover:underline"
-            >
-              View & Reply →
-            </Link>
           </div>
-        ))}
-      </div>
-    </main>
+
+          {/* =========================
+              ERROR
+          ========================= */}
+
+          {error && (
+            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-5">
+              <p className="text-sm font-medium text-red-700">
+                {error}
+              </p>
+
+              <button
+                type="button"
+                onClick={fetchMessages}
+                className="
+                  mt-3
+                  rounded-lg
+                  bg-red-600
+                  px-4
+                  py-2
+                  text-sm
+                  font-medium
+                  text-white
+                  transition
+                  hover:bg-red-700
+                "
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+
+          {/* =========================
+              LOADING
+          ========================= */}
+
+          {loading && (
+            <div className="rounded-2xl bg-white p-10 text-center shadow-md">
+              <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-indigo-600" />
+
+              <p className="text-sm text-gray-500">
+                Loading messages...
+              </p>
+            </div>
+          )}
+
+          {/* =========================
+              NO MESSAGES
+          ========================= */}
+
+          {!loading &&
+            !error &&
+            messages.length === 0 && (
+              <div className="rounded-2xl bg-white p-12 text-center shadow-md">
+
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
+                  <svg
+                    className="h-7 w-7 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 11.5a8.38 8.38 0 01-1.9 5.4A8.5 8.5 0 0112 20a8.38 8.38 0 01-3.9-.9L3 20l1.1-4.1A8.38 8.38 0 013 11.5 8.5 8.5 0 0112 3a8.5 8.5 0 019 8.5z"
+                    />
+                  </svg>
+                </div>
+
+                <h2 className="text-lg font-semibold text-gray-900">
+                  No messages yet
+                </h2>
+
+                <p className="mt-1 text-sm text-gray-500">
+                  There are no contact messages to display.
+                </p>
+              </div>
+            )}
+
+          {/* =========================
+              MESSAGE GRID
+          ========================= */}
+
+          {!loading &&
+            !error &&
+            messages.length > 0 && (
+              <div className="grid gap-6 md:grid-cols-2">
+
+                {messages.map((message, index) => (
+                  <MessageCard
+                    key={
+                      message.documentId ||
+                      message.id
+                    }
+                    message={message}
+                    index={index}
+                  />
+                ))}
+
+              </div>
+            )}
+
+        </div>
+
+      </main>
+    </div>
   );
 }

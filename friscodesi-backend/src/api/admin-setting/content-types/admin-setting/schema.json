@@ -1,0 +1,37 @@
+{
+  "kind": "singleType",
+  "collectionName": "admin_settings",
+  "info": {
+    "singularName": "admin-setting",
+    "pluralName": "admin-settings",
+    "displayName": "Admin Setting"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "adminName": {
+      "type": "string"
+    },
+    "email": {
+      "type": "email"
+    },
+    "emailNotifications": {
+      "type": "boolean",
+      "default": true
+    },
+    "newMessageNotifications": {
+      "type": "boolean",
+      "default": true
+    },
+    "listingNotifications": {
+      "type": "boolean",
+      "default": true
+    },
+    "maintenanceMode": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

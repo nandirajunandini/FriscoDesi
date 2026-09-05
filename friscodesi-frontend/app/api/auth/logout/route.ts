@@ -5,7 +5,22 @@ export async function POST() {
     message: "User logged out successfully",
   });
 
+  // Remove authentication token
+  response.cookies.set("token", "", {
+    httpOnly: true,
+    expires: new Date(0),
+    path: "/",
+  });
+
+  // Remove user token if it exists
   response.cookies.set("userToken", "", {
+    httpOnly: true,
+    expires: new Date(0),
+    path: "/",
+  });
+
+  // Remove role
+  response.cookies.set("role", "", {
     httpOnly: true,
     expires: new Date(0),
     path: "/",

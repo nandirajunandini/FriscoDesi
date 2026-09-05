@@ -1,444 +1,213 @@
 import { NextRequest, NextResponse } from "next/server";
 
-
 function extractZipCode(address: string) {
   const match = address.match(/\b\d{5}\b/);
-
   return match ? match[0] : "";
 }
 
-
-
-/* =============================
-   Convert Filters For Google
-============================= */
-
-function getFilterKeyword(filter?: string) {
-
-  const map: Record<string, string> = {
-
-    "Pure Veg":
-      "vegetarian",
-
-    "Non Veg":
-      "Indian restaurant",
-
-    "Veg & Non Veg":
-      "Indian restaurant",
-
-    "South Indian":
-      "South Indian restaurant",
-
-    "North Indian":
-      "North Indian restaurant",
-
-
-    Dentist:
-      "dentist",
-
-    Doctor:
-      "doctor",
-
-    Pharmacy:
-      "pharmacy",
-
-
-    Nanny:
-      "nanny service",
-
-    "Nanny Service":
-      "nanny service",
-
-
-    Maid:
-      "house cleaning service",
-
-    Salon:
-      "beauty salon",
-
-    Mechanic:
-      "auto repair",
-
-
-    Realtor:
-      "real estate agent",
-
-    Apartment:
-      "apartments",
-
-  };
-
-
-  return filter
-    ? map[filter] || filter
-    : "";
-
-}
-
-
-
-
-
-export async function POST(
-  req: NextRequest
-) {
-
-
+export async function POST(req: NextRequest) {
   try {
+    const { query } = await req.json();
 
-
-    const {
-      query,
-      category,
-      filter,
-      minRating,
-      sortBy,
-
-    } = await req.json();
-
-
-
-
-    if (!query) {
-
+    if (!query?.trim()) {
       return NextResponse.json(
         {
-          error:
-            "Query is required",
+          error: "Query is required",
         },
         {
-          status:400,
+          status: 400,
         }
       );
-
     }
-
-
-
 
     const apiKey =
       process.env.GOOGLE_PLACES_API_KEY;
 
-
-
-
     if (!apiKey) {
-
       return NextResponse.json(
         {
           error:
             "Google Places API key is missing",
         },
         {
-          status:500,
+          status: 500,
         }
       );
-
     }
 
+    /*
+      ==========================================
+      ADMIN SEARCH
+      ==========================================
 
+      No Food Type filter here.
 
+      Admin searches whatever they want.
+    */
 
-
-    const filterKeyword =
-      getFilterKeyword(filter);
-
-
-
-
-    let searchQuery =
-      `${query} in Frisco TX`;
-
-
-
-
-    if (filterKeyword) {
-
-      searchQuery =
-        `${filterKeyword} ${searchQuery}`;
-
-    }
-
-
+    const searchQuery = query.trim();
 
     console.log(
-      "Google Search:",
+      "Google Admin Search:",
       searchQuery
     );
 
+    const response = await fetch(
+      "https://places.googleapis.com/v1/places:searchText",
+      {
+        method: "POST",
 
+        headers: {
+          "Content-Type": "application/json",
 
+          "X-Goog-Api-Key":
+            apiKey,
 
+          /*
+            Added:
+            - types
+            - primaryType
 
-    const response =
-      await fetch(
+            These will help the save route
+            classify food businesses.
+          */
 
-        "https://places.googleapis.com/v1/places:searchText",
+          "X-Goog-FieldMask": [
+            "places.id",
+            "places.displayName",
+            "places.formattedAddress",
+            "places.rating",
+            "places.userRatingCount",
+            "places.websiteUri",
+            "places.nationalPhoneNumber",
+            "places.photos",
+            "places.types",
+            "places.primaryType",
+          ].join(","),
+        },
 
-        {
+        body: JSON.stringify({
+          textQuery: searchQuery,
 
-          method:"POST",
-
-
-          headers:{
-
-
-            "Content-Type":
-              "application/json",
-
-
-            "X-Goog-Api-Key":
-              apiKey,
-
-
-            "X-Goog-FieldMask":
-              [
-                "places.id",
-                "places.displayName",
-                "places.formattedAddress",
-                "places.rating",
-                "places.userRatingCount",
-                "places.websiteUri",
-                "places.nationalPhoneNumber",
-                "places.photos",
-
-              ].join(","),
-
-
-          },
-
-
-
-          body:JSON.stringify({
-
-            textQuery:
-              searchQuery,
-
-
-            pageSize:
-              20,
-
-
-          }),
-
-
-        }
-
-      );
-
-
-
-
+          pageSize: 20,
+        }),
+      }
+    );
 
     if (!response.ok) {
-
-
       const error =
         await response.text();
 
-
+      console.error(
+        "Google Places API error:",
+        error
+      );
 
       return NextResponse.json(
-
         {
           error:
             "Google Places API request failed",
 
           details:
             error,
-
         },
-
         {
           status:
             response.status,
         }
-
       );
-
     }
-
-
-
-
-
 
     const data =
       await response.json();
 
+    console.log(
+      "Google results:",
+      data.places?.length || 0
+    );
 
+    /*
+      ==========================================
+      Convert Google Places response
+      ==========================================
+    */
 
-
-
-
-    let places =
-
+    const places =
       data.places?.map(
-
-        (place:any)=>(
-
-
-          {
-
-            id:
-              place.id,
-
-
-            name:
-              place.displayName?.text
-              ?? "",
-
-
-
-            address:
-              place.formattedAddress
-              ?? "",
-
-
-
-            zipCode:
-              extractZipCode(
-                place.formattedAddress
-                ?? ""
-              ),
-
-
-
-            rating:
-              place.rating
-              ?? 0,
-
-
-
-            reviewCount:
-              place.userRatingCount
-              ?? 0,
-
-
-
-            phone:
-              place.nationalPhoneNumber
-              ?? "",
-
-
-
-            website:
-              place.websiteUri
-              ?? "",
-
-
-
-            photos:
-              place.photos
-              ?? [],
-
-
-          }
-
-
-        )
-
-      )
-      ?? [];
-
-
-
-
-
-
-    // Rating Filter
-
-    if(minRating){
-
-
-      places =
-        places.filter(
-          (place:any)=>
-            place.rating >=
-            Number(minRating)
-        );
-
-
-    }
-
-
-
-
-
-
-    // Sorting
-
-    if(sortBy === "reviews"){
-
-
-      places.sort(
-        (a:any,b:any)=>
-          b.reviewCount -
-          a.reviewCount
-      );
-
-
-
-    } else {
-
-
-
-      places.sort(
-        (a:any,b:any)=>
-          b.rating -
-          a.rating
-      );
-
-
-
-    }
-
-
-
-
-
+        (place: any) => ({
+          id:
+            place.id,
+
+          name:
+            place.displayName?.text ||
+            "",
+
+          address:
+            place.formattedAddress ||
+            "",
+
+          zipCode:
+            extractZipCode(
+              place.formattedAddress ||
+              ""
+            ),
+
+          rating:
+            place.rating ||
+            0,
+
+          reviewCount:
+            place.userRatingCount ||
+            0,
+
+          phone:
+            place.nationalPhoneNumber ||
+            "",
+
+          website:
+            place.websiteUri ||
+            "",
+
+          photos:
+            place.photos ||
+            [],
+
+          /*
+            Google place types
+          */
+
+          types:
+            place.types ||
+            [],
+
+          primaryType:
+            place.primaryType ||
+            "",
+        })
+      ) || [];
 
     return NextResponse.json({
-
       places,
 
-
       searchQuery,
-
-
     });
-
-
-
-
-
-
-  } catch(error:any){
-
-
-
+  } catch (error: any) {
     console.error(
       "Import search error:",
       error
     );
 
-
-
     return NextResponse.json(
-
       {
         error:
           "Something went wrong",
+
+        details:
+          error?.message,
       },
-
       {
-        status:500,
+        status: 500,
       }
-
     );
-
-
   }
-
-
 }

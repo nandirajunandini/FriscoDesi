@@ -6,6 +6,7 @@ import Gallery from "./Gallery";
 import GoogleMap from "./GoogleMap";
 import Reviews from "./Reviews";
 import SimilarBusinesses from "./SimilarBusinesses";
+import FavoriteButton from "./FavoriteButton";
 
 /* ============================= */
 /* Interfaces                    */
@@ -58,7 +59,7 @@ export interface Listing {
   description: any;
 
   phone?: string;
- website?: string;
+  website?: string;
 
   image?: string;
   photos?: string[];
@@ -98,7 +99,7 @@ async function getListing(
   slug: string
 ): Promise<Listing | null> {
   const res = await fetch(
-  `http://localhost:1337/api/listings?filters[slug][$eq]=${slug}&populate[category][populate]=section&populate[images]=true`,
+    `http://localhost:1337/api/listings?filters[slug][$eq]=${slug}&populate[category][populate]=section&populate[images]=true`,
     {
       cache: "no-store",
     }
@@ -115,10 +116,13 @@ async function getListing(
   }
 
   const item = json.data[0];
-  console.log("STRAPI ITEM:", JSON.stringify(item, null, 2));
+
+  console.log(
+    "STRAPI ITEM:",
+    JSON.stringify(item, null, 2)
+  );
 
   const listing: Listing = {
-
     id: item.id,
 
     documentId: item.documentId,
@@ -162,23 +166,22 @@ async function getListing(
       item.googlePlaceId ?? "",
 
     category: {
-
-      id:
-        item.category?.id,
+      id: item.category?.id,
 
       documentId:
         item.category?.documentId,
 
       name:
-        item.category?.name ?? "Category",
+        item.category?.name ??
+        "Category",
 
       slug:
-        item.category?.slug ?? "category",
+        item.category?.slug ??
+        "category",
 
       section:
         item.category?.section
           ? {
-
               id:
                 item.category.section.id,
 
@@ -190,12 +193,9 @@ async function getListing(
 
               slug:
                 item.category.section.slug,
-
             }
           : undefined,
-
     },
-
   };
 
   /* ============================= */
@@ -203,37 +203,38 @@ async function getListing(
   /* ============================= */
 
   try {
-
-    let placeId = listing.googlePlaceId;
+    let placeId =
+      listing.googlePlaceId;
 
     /* ==========================================
        Search Google if Place ID is missing
     ========================================== */
 
     if (!placeId) {
+      const searchQuery =
+        `${listing.name}, ${listing.address}`;
 
-      const searchQuery = `${listing.name}, ${listing.address}`;
-
-      const searchRes = await fetch(
-
-        `http://localhost:3000/api/test-places?query=${encodeURIComponent(searchQuery)}`,
-
-        {
-          cache: "no-store",
-        }
-
-      );
+      const searchRes =
+        await fetch(
+          `http://localhost:3000/api/test-places?query=${encodeURIComponent(
+            searchQuery
+          )}`,
+          {
+            cache: "no-store",
+          }
+        );
 
       if (searchRes.ok) {
+        const searchData =
+          await searchRes.json();
 
-        const searchData = await searchRes.json();
+        placeId =
+          searchData.places?.[0]?.id ??
+          "";
 
-        placeId = searchData.places?.[0]?.id ?? "";
-
-        listing.googlePlaceId = placeId;
-
+        listing.googlePlaceId =
+          placeId;
       }
-
     }
 
     /* ==========================================
@@ -241,48 +242,47 @@ async function getListing(
     ========================================== */
 
     if (placeId) {
-
-      const detailsRes = await fetch(
-
-        `http://localhost:3000/api/place-details?placeId=${placeId}`,
-
-        {
-          cache: "no-store",
-        }
-
-      );
+      const detailsRes =
+        await fetch(
+          `http://localhost:3000/api/place-details?placeId=${placeId}`,
+          {
+            cache: "no-store",
+          }
+        );
 
       if (detailsRes.ok) {
-
-        const googleData = await detailsRes.json();
+        const googleData =
+          await detailsRes.json();
 
         listing.googleData = {
-
           ...googleData,
 
           reviews:
+            googleData.reviews?.map(
+              (review: any) => ({
+                author:
+                  review
+                    .authorAttribution
+                    ?.displayName ??
+                  "Google User",
 
-            googleData.reviews?.map((review: any) => ({
+                rating:
+                  review.rating ?? 0,
 
-              author:
-                review.authorAttribution?.displayName ??
-                "Google User",
+                text:
+                  review.text ?? "",
 
-              rating:
-                review.rating ?? 0,
-
-              text:
-                review.text ?? "",
-
-              time:
-                review.relativePublishTimeDescription ?? "",
-
-            })) ?? [],
-
+                time:
+                  review
+                    .relativePublishTimeDescription ??
+                  "",
+              })
+            ) ?? [],
         };
 
         listing.phone =
-          googleData.internationalPhoneNumber ??
+          googleData
+            .internationalPhoneNumber ??
           listing.phone;
 
         listing.website =
@@ -298,35 +298,38 @@ async function getListing(
           listing.reviewCount;
 
         listing.openingHours =
-          googleData.regularOpeningHours?.weekdayDescriptions ??
+          googleData
+            .regularOpeningHours
+            ?.weekdayDescriptions ??
           listing.openingHours;
 
-        if (googleData.photos?.length) {
+        if (
+          googleData.photos?.length
+        ) {
+          const googlePhotos =
+            googleData.photos.map(
+              (photo: any) =>
+                `https://places.googleapis.com/v1/${photo.name}/media?maxHeightPx=900&maxWidthPx=1200&key=${process.env.GOOGLE_PLACES_API_KEY}`
+            );
 
-          const googlePhotos = googleData.photos.map(
-            (photo: any) =>
-              `https://places.googleapis.com/v1/${photo.name}/media?maxHeightPx=900&maxWidthPx=1200&key=${process.env.GOOGLE_PLACES_API_KEY}`
-          );
+          listing.photos =
+            googlePhotos;
 
-          listing.photos = googlePhotos;
-
-          listing.image = googlePhotos[0];
-
+          listing.image =
+            googlePhotos[0];
         }
-
       }
-
     }
-
   } catch (error) {
-
-    console.error("Google Details Error:", error);
-
+    console.error(
+      "Google Details Error:",
+      error
+    );
   }
 
   return listing;
-
 }
+
 /* ============================= */
 /* Fetch Similar Businesses      */
 /* ============================= */
@@ -334,145 +337,180 @@ async function getListing(
 async function getSimilarBusinesses(
   listing: Listing
 ): Promise<SimilarBusiness[]> {
-
   try {
-
     const res = await fetch(
-  `http://localhost:1337/api/listings?filters[category][slug][$eq]=${listing.category.slug}&filters[slug][$ne]=${listing.slug}&populate[images]=true&populate[category]=true&pagination[pageSize]=6`,
-  {
-    cache:"no-store",
-  }
-);
-
-    if (!res.ok) {
-      console.log("Status:", res.status);
-      console.log(await res.text());
-      return [];
-   }
-
-    const json = await res.json();
-    console.log("Similar API Count:", json.data.length);
-    console.log("Similar API:", json.data);
-    console.log("TOP RATED:",json);
-
-    return (
-      json.data?.map((item: any) => ({
-
-        id: item.id,
-
-        documentId: item.documentId,
-
-        name: item.name,
-
-        slug: item.slug,
-
-        address: item.address ?? "",
-
-        rating: item.rating ?? 0,
-
-        image: item.images?.[0]?.url
-          ? `http://localhost:1337${item.images[0].url}`
-          : "",
-
-        category: {
-
-          id: item.category?.id,
-
-          documentId: item.category?.documentId,
-
-          name: item.category?.name ?? "",
-
-          slug: item.category?.slug ?? "",
-
-        },
-
-      })) ?? []
-
+      `http://localhost:1337/api/listings?filters[category][slug][$eq]=${listing.category.slug}&filters[slug][$ne]=${listing.slug}&populate[images]=true&populate[category]=true&pagination[pageSize]=6`,
+      {
+        cache: "no-store",
+      }
     );
 
-  } catch (error) {
+    if (!res.ok) {
+      console.log(
+        "Status:",
+        res.status
+      );
 
+      console.log(
+        await res.text()
+      );
+
+      return [];
+    }
+
+    const json =
+      await res.json();
+
+    console.log(
+      "Similar API Count:",
+      json.data.length
+    );
+
+    console.log(
+      "Similar API:",
+      json.data
+    );
+
+    console.log(
+      "TOP RATED:",
+      json
+    );
+
+    return (
+      json.data?.map(
+        (item: any) => ({
+          id: item.id,
+
+          documentId:
+            item.documentId,
+
+          name: item.name,
+
+          slug: item.slug,
+
+          address:
+            item.address ?? "",
+
+          rating:
+            item.rating ?? 0,
+
+          image:
+            item.images?.[0]?.url
+              ? `http://localhost:1337${item.images[0].url}`
+              : "",
+
+          category: {
+            id:
+              item.category?.id,
+
+            documentId:
+              item.category
+                ?.documentId,
+
+            name:
+              item.category?.name ??
+              "",
+
+            slug:
+              item.category?.slug ??
+              "",
+          },
+        })
+      ) ?? []
+    );
+  } catch (error) {
     console.error(
       "Similar Businesses Error:",
       error
     );
 
     return [];
-
   }
-
 }
 
 /* ============================= */
 /* Fetch Top Rated Businesses    */
 /* ============================= */
 
-async function getTopRatedBusinesses(): Promise<SimilarBusiness[]> {
-
+async function getTopRatedBusinesses(): Promise<
+  SimilarBusiness[]
+> {
   try {
-
-   const res = await fetch(
-  `http://localhost:1337/api/listings?sort=rating:desc&populate[images]=true&populate[category]=true&pagination[pageSize]=6`,
-  {
-    cache:"no-store",
-  }
-);
-
-    if (!res.ok) {
-      console.log("Status:", res.status);
-      console.log(await res.text());
-      return [];
-   }
-
-    const json = await res.json();
-
-    return (
-      json.data?.map((item: any) => ({
-
-        id: item.id,
-
-        documentId: item.documentId,
-
-        name: item.name,
-
-        slug: item.slug,
-
-        address: item.address ?? "",
-
-        rating: item.rating ?? 0,
-
-        image: item.images?.[0]?.url
-          ? `http://localhost:1337${item.images[0].url}`
-          : "",
-
-        category: {
-
-          id: item.category?.id,
-
-          documentId: item.category?.documentId,
-
-          name: item.category?.name ?? "",
-
-          slug: item.category?.slug ?? "",
-
-        },
-
-      })) ?? []
-
+    const res = await fetch(
+      `http://localhost:1337/api/listings?sort=rating:desc&populate[images]=true&populate[category]=true&pagination[pageSize]=6`,
+      {
+        cache: "no-store",
+      }
     );
 
-  } catch (error) {
+    if (!res.ok) {
+      console.log(
+        "Status:",
+        res.status
+      );
 
+      console.log(
+        await res.text()
+      );
+
+      return [];
+    }
+
+    const json =
+      await res.json();
+
+    return (
+      json.data?.map(
+        (item: any) => ({
+          id: item.id,
+
+          documentId:
+            item.documentId,
+
+          name: item.name,
+
+          slug: item.slug,
+
+          address:
+            item.address ?? "",
+
+          rating:
+            item.rating ?? 0,
+
+          image:
+            item.images?.[0]?.url
+              ? `http://localhost:1337${item.images[0].url}`
+              : "",
+
+          category: {
+            id:
+              item.category?.id,
+
+            documentId:
+              item.category
+                ?.documentId,
+
+            name:
+              item.category?.name ??
+              "",
+
+            slug:
+              item.category?.slug ??
+              "",
+          },
+        })
+      ) ?? []
+    );
+  } catch (error) {
     console.error(
       "Top Rated Error:",
       error
     );
 
     return [];
-
   }
-
 }
+
 /* ============================= */
 /* Page Component                */
 /* ============================= */
@@ -484,10 +522,11 @@ export default async function ListingPage({
     slug: string;
   }>;
 }) {
+  const { slug } =
+    await params;
 
-  const { slug } = await params;
-
-  const listing = await getListing(slug);
+  const listing =
+    await getListing(slug);
 
   if (!listing) {
     return notFound();
@@ -501,56 +540,96 @@ export default async function ListingPage({
     similarBusinesses,
     topRatedBusinesses,
   ] = await Promise.all([
-    getSimilarBusinesses(listing),
+    getSimilarBusinesses(
+      listing
+    ),
+
     getTopRatedBusinesses(),
   ]);
-  console.log("similarBusinesses:", similarBusinesses.length);
-  console.log("topRatedBusinesses:", topRatedBusinesses.length);
+
+  console.log(
+    "similarBusinesses:",
+    similarBusinesses.length
+  );
+
+  console.log(
+    "topRatedBusinesses:",
+    topRatedBusinesses.length
+  );
 
   return (
+    <main className="min-h-screen bg-linear-to-b from-gray-50 via-white to-blue-50">
 
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-blue-50">
+      {/* =========================
+          Hero
+      ========================= */}
 
-      {/* Hero */}
+      <div className="relative">
 
-      <ListingHero
-        listing={listing}
-      />
+        <ListingHero
+          listing={listing}
+        />
 
-      {/* Business Information */}
+        {/* =========================
+            Favorite Button
+        ========================= */}
+
+        <div className="absolute top-6 right-6 z-20">
+
+          <FavoriteButton
+            listingId={listing.id}
+          />
+
+        </div>
+
+      </div>
+
+      {/* =========================
+          Business Information
+      ========================= */}
 
       <BusinessInfo
         listing={listing}
       />
 
-      {/* Gallery */}
+      {/* =========================
+          Gallery
+      ========================= */}
 
       <Gallery
         listing={listing}
       />
 
-      {/* Google Map */}
+      {/* =========================
+          Google Map
+      ========================= */}
 
       <GoogleMap
         listing={listing}
       />
 
-      {/* Reviews */}
+      {/* =========================
+          Reviews
+      ========================= */}
 
       <Reviews
         listing={listing}
       />
 
-      {/* Similar Businesses */}
+      {/* =========================
+          Similar Businesses
+      ========================= */}
 
       <SimilarBusinesses
         listing={listing}
-        businesses={similarBusinesses}
-        topRated={topRatedBusinesses}
+        businesses={
+          similarBusinesses
+        }
+        topRated={
+          topRatedBusinesses
+        }
       />
 
     </main>
-
   );
-
 }

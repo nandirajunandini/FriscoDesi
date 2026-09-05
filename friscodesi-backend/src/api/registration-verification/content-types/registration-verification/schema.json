@@ -1,0 +1,30 @@
+{
+  "kind": "collectionType",
+  "collectionName": "registration_verifications",
+  "info": {
+    "singularName": "registration-verification",
+    "pluralName": "registration-verifications",
+    "displayName": "Registration Verification"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "username": {
+      "type": "string"
+    },
+    "email": {
+      "type": "email"
+    },
+    "codeHash": {
+      "type": "string"
+    },
+    "expiresAt": {
+      "type": "datetime"
+    },
+    "attempts": {
+      "type": "integer"
+    }
+  }
+}

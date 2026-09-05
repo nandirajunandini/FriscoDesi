@@ -1,0 +1,40 @@
+{
+  "kind": "collectionType",
+  "collectionName": "email_verifications",
+  "info": {
+    "singularName": "email-verification",
+    "pluralName": "email-verifications",
+    "displayName": "Email Verification"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "email": {
+      "type": "email",
+      "required": true
+    },
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "message": {
+      "type": "text",
+      "required": true
+    },
+    "codeHash": {
+      "type": "string",
+      "required": true
+    },
+    "expiresAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "attempts": {
+      "type": "integer",
+      "required": true,
+      "default": 0
+    }
+  }
+}
