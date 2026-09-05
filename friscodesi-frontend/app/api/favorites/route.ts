@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
    Strapi URL
 ========================================================= */
 
-const STRAPI_URL = "http://localhost:1337";
+const STRAPI_URL = process.env.STRAPI_URL;
 
 /* =========================================================
    SAFE JSON HELPER

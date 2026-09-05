@@ -99,7 +99,7 @@ async function getListing(
   slug: string
 ): Promise<Listing | null> {
   const res = await fetch(
-    `http://localhost:1337/api/listings?filters[slug][$eq]=${slug}&populate[category][populate]=section&populate[images]=true`,
+    `${process.env.STRAPI_URL}/api/listings?filters[slug][$eq]=${slug}&populate[category][populate]=section&populate[images]=true`,
     {
       cache: "no-store",
     }
@@ -144,13 +144,13 @@ async function getListing(
     website: item.website ?? "",
 
     image: item.images?.[0]?.url
-      ? `http://localhost:1337${item.images[0].url}`
+      ? `${process.env.STRAPI_URL}${item.images[0].url}`
       : "",
 
     photos:
       item.images?.map(
         (photo: any) =>
-          `http://localhost:1337${photo.url}`
+          `${process.env.STRAPI_URL}${photo.url}`
       ) ?? [],
 
     openingHours:
@@ -339,7 +339,7 @@ async function getSimilarBusinesses(
 ): Promise<SimilarBusiness[]> {
   try {
     const res = await fetch(
-      `http://localhost:1337/api/listings?filters[category][slug][$eq]=${listing.category.slug}&filters[slug][$ne]=${listing.slug}&populate[images]=true&populate[category]=true&pagination[pageSize]=6`,
+      `${process.env.STRAPI_URL}/api/listings?filters[category][slug][$eq]=${listing.category.slug}&filters[slug][$ne]=${listing.slug}&populate[images]=true&populate[category]=true&pagination[pageSize]=6`,
       {
         cache: "no-store",
       }
@@ -396,7 +396,7 @@ async function getSimilarBusinesses(
 
           image:
             item.images?.[0]?.url
-              ? `http://localhost:1337${item.images[0].url}`
+              ? `${process.env.STRAPI_URL}${item.images[0].url}`
               : "",
 
           category: {
@@ -437,7 +437,7 @@ async function getTopRatedBusinesses(): Promise<
 > {
   try {
     const res = await fetch(
-      `http://localhost:1337/api/listings?sort=rating:desc&populate[images]=true&populate[category]=true&pagination[pageSize]=6`,
+      `${process.env.STRAPI_URL}/api/listings?sort=rating:desc&populate[images]=true&populate[category]=true&pagination[pageSize]=6`,
       {
         cache: "no-store",
       }
@@ -479,7 +479,7 @@ async function getTopRatedBusinesses(): Promise<
 
           image:
             item.images?.[0]?.url
-              ? `http://localhost:1337${item.images[0].url}`
+              ? `${process.env.STRAPI_URL}${item.images[0].url}`
               : "",
 
           category: {

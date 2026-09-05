@@ -21,7 +21,7 @@ export default function LoginPage() {
 
     try {
       const res = await fetch(
-        "http://localhost:1337/api/auth/local",
+        `${process.env.STRAPI_URL}/api/auth/local`,
         {
           method: "POST",
 

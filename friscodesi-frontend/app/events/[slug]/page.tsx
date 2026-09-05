@@ -25,7 +25,7 @@ interface Event {
 
 async function getEvent(slug: string): Promise<Event | null> {
   const res = await fetch(
-    `http://localhost:1337/api/events?filters[slug][$eq]=${slug}&populate=*`,
+    `${process.env.STRAPI_URL}/api/events?filters[slug][$eq]=${slug}&populate=*`,
     { cache: "no-store" }
   );
 
@@ -68,9 +68,9 @@ export default async function EventDetailsPage({
           {event.image?.url && (
             <div className="bg-gray-100 flex justify-center">
               <img
-                src={`http://localhost:1337${event.image.url}`}
+                src={`${process.env.STRAPI_URL}${event.image.url}`}
                 alt={event.name}
-                className="w-full max-h-[500px] object-contain"
+                className="w-full max-h-125 object-contain"
               />
             </div>
           )}

@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     ========================= */
 
     const res = await fetch(
-      "http://localhost:1337/api/auth/forgot-password",
+  `${process.env.STRAPI_URL}/api/auth/forgot-password`,
       {
         method: "POST",
 

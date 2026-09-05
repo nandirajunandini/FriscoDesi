@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     // ==============================
 
     const res = await fetch(
-      "http://localhost:1337/api/auth/local",
+      `${process.env.STRAPI_URL}/api/auth/local`,
       {
         method: "POST",
         headers: {
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     // ==============================
 
     const userRes = await fetch(
-      "http://localhost:1337/api/users/me?populate=role",
+  `${process.env.STRAPI_URL}/api/users/me?populate=role`,
       {
         headers: {
           Authorization: `Bearer ${token}`,

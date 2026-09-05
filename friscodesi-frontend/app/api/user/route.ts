@@ -25,7 +25,7 @@ export async function GET() {
 
     // Fetch current user from Strapi
     const response = await fetch(
-      "http://localhost:1337/api/users/me?populate=role",
+      `${process.env.STRAPI_URL}/api/users/me?populate=role`,
       {
         method: "GET",
         headers: {
@@ -109,7 +109,7 @@ export async function PUT(
     ===================================================== */
 
     const meResponse = await fetch(
-      "http://localhost:1337/api/users/me",
+      `${process.env.STRAPI_URL}/api/users/me`,
       {
         method: "GET",
         headers: {
@@ -207,7 +207,7 @@ export async function PUT(
 
     const updateResponse =
       await fetch(
-        `http://localhost:1337/api/users/${currentUser.id}`,
+        `${process.env.STRAPI_URL}/api/users/${currentUser.id}`,
         {
           method: "PUT",
 

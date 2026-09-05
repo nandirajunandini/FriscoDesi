@@ -38,9 +38,9 @@ async function getCategory(
 ): Promise<Category | null> {
   try {
     const res = await fetch(
-      `http://localhost:1337/api/categories?filters[slug][$eq]=${encodeURIComponent(
-        slug
-      )}&populate=section&populate=listings`,
+      `${process.env.STRAPI_URL}/api/categories?filters[slug][$eq]=${encodeURIComponent(
+  slug
+)}&populate=section&populate=listings`,
       {
         cache: "no-store",
       }

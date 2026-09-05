@@ -15,7 +15,7 @@ export default function ReplyPage() {
   useEffect(() => {
     const fetchMessage = async () => {
       const res = await fetch(
-        `http://localhost:1337/api/contact-messages/${documentId}`
+        `${process.env.NEXT_PUBLIC_STRAPI_URL}/api/contact-messages/${documentId}`
       );
       const data = await res.json();
       setMessageData(data.data);

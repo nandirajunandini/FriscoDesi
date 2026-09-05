@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     ========================= */
 
     const res = await fetch(
-      "http://localhost:1337/api/auth/reset-password",
+  `${process.env.STRAPI_URL}/api/auth/reset-password`,
       {
         method: "POST",
 

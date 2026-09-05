@@ -31,7 +31,7 @@ export default function AdminMessages() {
       setError("");
 
       const res = await fetch(
-        "http://localhost:1337/api/contact-messages?sort=createdAt:desc",
+  `${process.env.NEXT_PUBLIC_STRAPI_URL}/api/contact-messages?sort=createdAt:desc`,
         {
           method: "GET",
           cache: "no-store",

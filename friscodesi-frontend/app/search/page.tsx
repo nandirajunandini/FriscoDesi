@@ -11,7 +11,7 @@ async function searchListings(query: string): Promise<Listing[]> {
   if (!query) return [];
 
   const res = await fetch(
-    `http://localhost:1337/api/listings?filters[name][$containsi]=${encodeURIComponent(query)}`,
+    `${process.env.STRAPI_URL}/api/listings?filters[name][$containsi]=${encodeURIComponent(query)}`,
     { cache: "no-store" }
   );
 
@@ -30,7 +30,7 @@ export default async function SearchPage({
   const results = await searchListings(query);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white px-6 py-20">
+    <main className="min-h-screen bg-linear-to-b from-gray-50 to-white px-6 py-20">
       <div className="max-w-6xl mx-auto">
 
         {/* No Query State */}

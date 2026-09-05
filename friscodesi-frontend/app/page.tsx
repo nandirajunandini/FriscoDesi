@@ -15,11 +15,11 @@ interface Category {
 async function getCategories(): Promise<Category[]> {
   try {
     const res = await fetch(
-      "http://localhost:1337/api/categories?pagination[pageSize]=100",
-      {
-        cache: "no-store",
-      }
-    );
+  `${process.env.STRAPI_URL}/api/categories?pagination[pageSize]=100`,
+  {
+    cache: "no-store",
+  }
+);
 
     if (!res.ok) {
       console.error(

@@ -136,7 +136,7 @@ export async function POST(request: Request) {
     ===================================================== */
 
     const response = await fetch(
-      "http://localhost:1337/api/auth/change-password",
+      `${process.env.STRAPI_URL}/api/auth/change-password`,
       {
         method: "POST",
 

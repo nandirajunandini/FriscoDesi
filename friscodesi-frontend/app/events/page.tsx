@@ -23,7 +23,7 @@ interface Event {
 
 async function getEvents(): Promise<Event[]> {
   const res = await fetch(
-    "http://localhost:1337/api/events?populate=image&sort=date:asc",
+    `${process.env.STRAPI_URL}/api/events?populate=image&sort=date:asc`,
     { cache: "no-store" }
   );
 
@@ -73,7 +73,7 @@ export default async function EventsPage() {
                 {/* Image */}
                 {event.image?.url && (
                   <img
-                    src={`http://localhost:1337${event.image.url}`}
+                    src={`${process.env.STRAPI_URL}${event.image.url}`}
                     alt={event.name}
                     className="h-56 w-full object-cover group-hover:scale-105 transition duration-300"
                   />

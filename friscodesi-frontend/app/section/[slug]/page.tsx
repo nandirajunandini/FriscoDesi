@@ -25,7 +25,7 @@ interface Section {
 
 async function getSection(slug: string): Promise<Section | null> {
   const res = await fetch(
-    `http://localhost:1337/api/sections?filters[slug][$eq]=${slug}&populate=categories`,
+    `${process.env.STRAPI_URL}/api/sections?filters[slug][$eq]=${slug}&populate=categories`,
     {
       cache: "no-store",
     }
@@ -72,12 +72,12 @@ export default async function SectionPage({
     "from-red-600 via-red-500 to-orange-400";
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <main className="min-h-screen bg-linear-to-b from-gray-50 to-white">
 
       {/* ================= HERO ================= */}
 
       <section
-        className={`bg-gradient-to-r ${heroGradient} text-white py-20 shadow-lg`}
+        className={`bg-linear-to-r ${heroGradient} text-white py-20 shadow-lg`}
       >
         <div className="max-w-6xl mx-auto px-6">
 

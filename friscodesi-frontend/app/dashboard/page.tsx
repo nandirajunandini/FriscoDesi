@@ -37,7 +37,7 @@ interface Listing {
 async function getSections(): Promise<Section[]> {
   try {
     const res = await fetch(
-      "http://localhost:1337/api/sections",
+      `${process.env.STRAPI_URL}/api/sections`,
       {
         cache: "no-store",
       }
@@ -72,7 +72,7 @@ async function getSections(): Promise<Section[]> {
 async function getFeatured(): Promise<Listing[]> {
   try {
     const res = await fetch(
-      "http://localhost:1337/api/listings?filters[featured][$eq]=true",
+      `${process.env.STRAPI_URL}/api/listings?filters[featured][$eq]=true`,
       {
         cache: "no-store",
       }
@@ -119,7 +119,7 @@ let user = null;
 if (token) {
   try {
     const userRes = await fetch(
-      "http://localhost:1337/api/users/me?populate=role",
+      `${process.env.STRAPI_URL}/api/users/me?populate=role`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
